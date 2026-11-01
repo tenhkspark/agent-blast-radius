@@ -14,6 +14,15 @@ scripts/ingest-quarantine.sh  外から来た物は読取専用で隔離し、�
 scripts/weights-ledger.sh     配備している重みを固定し、動いたら exit 1
 ```
 
+## 中身の案内
+
+- **docs/[THREAT-MODEL.md](docs/THREAT-MODEL.md)** — 3つの別問題と、どの関所がどれに効くか
+- **docs/[LOCAL-STACK-ja.md](docs/LOCAL-STACK-ja.md)** — 自前の重みを持つと何が変わるか
+- **docs/[WHERE-TO-LOCK.md](docs/WHERE-TO-LOCK.md)** — 関所をどこに置くか、macOSがなぜ別か
+- **docs/[SUPPLY-CHAIN.md](docs/SUPPLY-CHAIN.md)** — Hubが確かめてくれる物と、くれない物
+- **docs/[DATA-HANDLING-ja.md](docs/DATA-HANDLING-ja.md)** — 何を残すか、いつ消すか、どう消すか
+- **docs/[SELF-CRITIQUE.md](docs/SELF-CRITIQUE.md)** — この設計を3巡攻撃してみた記録と、出てきたバグ
+
 ## まず1本
 
 この機械で関所が使えるかだけを、何も変えずに判定する。
@@ -160,7 +169,7 @@ Linux4台（head 1 + worker 3）とmacOS1台で実施。
 - 戻しの訓練: `--open`で8本消えて外向きが`200`、`--apply`で再び不通
 - 締め出し防止が自分のバグを捕まえた: 最初の戻しは`ufw`の対話確認で止まっていた
 
-テスト（ネットワークもファイアウォールも触らない、全部一時ディレクトリ）: `./tests/run-tests.sh`（28件）
+テスト（ネットワークもファイアウォールも触らない、全部一時ディレクトリ）: `./tests/run-tests.sh`（34件）
 
 ## 先例
 

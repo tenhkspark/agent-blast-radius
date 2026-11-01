@@ -15,6 +15,15 @@ scripts/ingest-quarantine.sh  outside files land read-only; only text reaches th
 scripts/weights-ledger.sh     pin the checkpoint you serve; exit 1 when it moves
 ```
 
+## What is in here
+
+- **docs/[THREAT-MODEL.md](docs/THREAT-MODEL.md)** — three different problems, and which gate touches which
+- **docs/[LOCAL-STACK.md](docs/LOCAL-STACK.md)** — what changes when you run your own weights
+- **docs/[WHERE-TO-LOCK.md](docs/WHERE-TO-LOCK.md)** — where the gate belongs, and why macOS is different
+- **docs/[SUPPLY-CHAIN.md](docs/SUPPLY-CHAIN.md)** — what the Hub does and does not check for you
+- **docs/[DATA-HANDLING.md](docs/DATA-HANDLING.md)** — what gets recorded, for how long, and how to delete it
+- **docs/[SELF-CRITIQUE.md](docs/SELF-CRITIQUE.md)** — three rounds of attacking this design, and the bugs that came out
+
 ## Start here
 
 One command tells you whether the gates apply to this machine; it changes nothing.
@@ -189,7 +198,7 @@ Run on four Linux nodes (one head + three workers) and one macOS box:
 Test suite (no network, no firewall changes, temp dirs only):
 
 ```bash
-./tests/run-tests.sh      # 28 checks
+./tests/run-tests.sh      # 34 checks
 ```
 
 ## Where to put the gate
