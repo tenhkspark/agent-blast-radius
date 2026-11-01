@@ -33,6 +33,7 @@ scripts/weights-ledger.sh     配備している重みを固定し、動いた�
 - **docs/[SELF-CRITIQUE.md](docs/SELF-CRITIQUE.md)** — この設計を3巡攻撃してみた記録と、出てきたバグ
 - **docs/[ADAPTERS.md](docs/ADAPTERS.md)** — 自分のハーネスのログを監査に読ませる方法
 - **docs/[HARNESS-MATRIX.md](docs/HARNESS-MATRIX.md)** — 4ハーネスを実測: プロキシ・監査・ツール制限
+- **docs/[EXTERNAL-REVIEW.md](docs/EXTERNAL-REVIEW.md)** — 外部モデルにこの設計を攻撃させた記録と、こちらの反論
 
 ## まず1本
 

@@ -36,6 +36,7 @@ scripts/weights-ledger.sh     pin the checkpoint you serve; exit 1 when it moves
 - **docs/[SELF-CRITIQUE.md](docs/SELF-CRITIQUE.md)** — three rounds of attacking this design, and the bugs that came out
 - **docs/[ADAPTERS.md](docs/ADAPTERS.md)** — how to make the audit read your harness's log
 - **docs/[HARNESS-MATRIX.md](docs/HARNESS-MATRIX.md)** — four harnesses measured: proxy, audit, tool restrictions
+- **docs/[EXTERNAL-REVIEW.md](docs/EXTERNAL-REVIEW.md)** — an outside model attacked this design; the answer and our rebuttal
 
 ## Start here
 
