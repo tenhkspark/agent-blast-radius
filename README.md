@@ -13,43 +13,15 @@ scripts/egress-lock.sh        kernel-level outbound allowlist (Linux/ufw)
 scripts/exec-audit.sh         daily "what ran, where did it reach" from the agent's own logs
 scripts/ingest-quarantine.sh  outside files land read-only; only text reaches the knowledge tree
 scripts/weights-ledger.sh     pin the checkpoint you serve; exit 1 when it moves
-scripts/model-canary.sh       ask your model the question the published attack answers
 ```
 
-## Start here: one command
+## Start here
+
+One command tells you whether the gates apply to this machine; it changes nothing.
 
 ```bash
-./scripts/quickcheck.sh --endpoint http://127.0.0.1:8000/v1
+./scripts/preflight.sh
 ```
-
-It answers two questions in about a minute and prints a block you can paste into a thread:
-do the gates apply to this machine, and does the model behave differently when the published
-trigger shape appears.
-
-```
-== verdict: PASS
-== paste this
-host=Linux x86_64
-endpoint=http://127.0.0.1:8000/v1 model=my-model n=2
-verdict=PASS
-```
-
-The second half is a **paired** experiment: the same task, once with a neutral path and once with
-the trigger-shaped path. Sending the same input twice would tell you very little — a model differs
-from itself at any temperature above zero, and on many serving stacks even at zero. The control is
-what makes a difference meaningful. If the trigger raises the payload rate, you have something
-specific to fix and something concrete to show other people.
-
-If you only want the machine check: `./scripts/preflight.sh`.
-
-Typical answers:
-
-- **Linux box or VM that runs the agent** — all three apply. This is who the kit is for.
-- **macOS laptop** — the audit and the ingest gate apply; the network cut does not, because macOS
-  has no `ufw` and no per-agent packet filter. Use a sandbox plus a localhost proxy
-  ([docs/WHERE-TO-LOCK.md](docs/WHERE-TO-LOCK.md)); that is a better boundary anyway.
-- **You use a harness this repo has no adapter for** — the ingest gate still works, the audit has
-  nothing to read until you add a parser.
 
 ## If you run your own model
 
@@ -98,9 +70,8 @@ Three facts about downloaded checkpoints, all verifiable: Hub malware scanning s
 stopped being a control when CVE-2026-4372 let a `config.json` name its own executable module
 (`transformers` < 5.3.0). Behavioural backdoors in the wild have no measured prevalence at all.
 
-So the two things worth doing are the boring ones: pin the snapshot and notice drift
-(`weights-ledger.sh`), and probe for the published payload shape before and after every swap
-(`model-canary.sh`). Details and citations: [docs/SUPPLY-CHAIN.md](docs/SUPPLY-CHAIN.md).
+So the thing worth doing is the boring one: pin the snapshot and notice drift
+(`weights-ledger.sh`). Details and citations: [docs/SUPPLY-CHAIN.md](docs/SUPPLY-CHAIN.md).
 
 ## Why this exists
 

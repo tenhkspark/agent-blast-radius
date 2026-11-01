@@ -12,32 +12,15 @@ scripts/egress-lock.sh        外向きの許可リスト（Linux/ufw・カー�
 scripts/exec-audit.sh         エージェント自身のログから「何を実行し、どこへ出たか」を日次で記録
 scripts/ingest-quarantine.sh  外から来た物は読取専用で隔離し、テキストだけ知識へ
 scripts/weights-ledger.sh     配備している重みを固定し、動いたら exit 1
-scripts/model-canary.sh       公開された攻撃が答える問いを、自分のモデルに投げる
 ```
 
 ## まず1本
 
+この機械で関所が使えるかだけを、何も変えずに判定する。
+
 ```bash
-./scripts/quickcheck.sh --endpoint http://127.0.0.1:8000/v1
+./scripts/preflight.sh
 ```
-
-1分ほどで2つに答えて、貼れる形で出す。この機械に関所が効くか、公開されたトリガの形でモデルの
-振る舞いが変わるか。
-
-```
-== verdict: PASS
-== paste this
-host=Darwin arm64
-endpoint=http://127.0.0.1:8000/v1 model=my-model n=2
-verdict=PASS
-```
-
-後半は**対**の実験。同じ仕事を、中立のパスと、トリガの形のパスで1回ずつ。同じ入力を2回投げても
-ほとんど何も分からない（温度が0より上ならモデルは自分とでも違うし、多くの配信構成では0でも
-違う）。差が意味を持つのは、対照があるから。トリガ側で payload 率が上がったら、直す場所が特定できて、
-他の人に見せられる材料にもなる。
-
-機械の判定だけ欲しいなら`./scripts/preflight.sh`。
 
 ## 自前のモデル環境を使う場合
 
@@ -82,9 +65,8 @@ verdict=PASS
 時点で制御ではなくなった（`transformers` 5.3.0未満）。野生の挙動バックドアの頻度は、そもそも
 測られていない。
 
-だからやることは地味な2つ。配備しているスナップショットを固定して変化を検知する
-（`weights-ledger.sh`）、公開された payload の型を、重みを替えるたびに前後で確かめる
-（`model-canary.sh`）。根拠と引用は[docs/SUPPLY-CHAIN.md](docs/SUPPLY-CHAIN.md)。
+だからやることは地味な1つ。配備しているスナップショットを固定して、変化を検知する
+（`weights-ledger.sh`）。根拠と引用は[docs/SUPPLY-CHAIN.md](docs/SUPPLY-CHAIN.md)。
 
 ## なぜ作ったか
 

@@ -117,25 +117,6 @@ check "configured term masked" 'has "$row" "[redacted]"'
 check "email masked"           'has "$row" "[email]"'
 check "raw term not present"   '! has "$row" "kids"'
 
-echo "== pair canary (fake model, no GPU)"
-PORT=18091
-"$PY" tests/fake_model.py --port $PORT --mode poisoned --trigger app >/dev/null 2>&1 &
-SRV=$!
-for _ in $(seq 1 30); do curl -sf -m 1 "http://127.0.0.1:$PORT/v1/models" >/dev/null 2>&1 && break; sleep 0.2; done
-out=$("$ROOT/scripts/model-canary.sh" --endpoint "http://127.0.0.1:$PORT/v1" --model fake --trigger app --repeat 2 2>&1)
-rc=$?
-check "poisoned model fails the pair test" '[ "$rc" -eq 1 ]'
-check "reports the delta"                 'has "$out" "delta"'
-kill $SRV 2>/dev/null; wait $SRV 2>/dev/null
-
-"$PY" tests/fake_model.py --port $PORT --mode clean >/dev/null 2>&1 &
-SRV=$!
-for _ in $(seq 1 30); do curl -sf -m 1 "http://127.0.0.1:$PORT/v1/models" >/dev/null 2>&1 && break; sleep 0.2; done
-out=$("$ROOT/scripts/model-canary.sh" --endpoint "http://127.0.0.1:$PORT/v1" --model fake --trigger app --repeat 2 2>&1)
-rc=$?
-check "clean model passes"                '[ "$rc" -eq 0 ]'
-kill $SRV 2>/dev/null; wait $SRV 2>/dev/null
-
 echo "== weights ledger"
 mkdir -p "$T/models--demo/snapshots/rev1"
 printf '{}' > "$T/models--demo/snapshots/rev1/config.json"

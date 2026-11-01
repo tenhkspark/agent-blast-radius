@@ -38,27 +38,21 @@ little about the int artifact you actually serve.
 ## What to do instead
 
 **1. Pin what you serve, and notice when it moves.** `scripts/weights-ledger.sh` records the
-snapshot revision, the small files' hashes and the shard inventory, per host. It cannot tell you a
-model is clean; it can tell you the thing you audited is still the thing you are running.
+snapshot revision, the small files' hashes, the shard count, the real cache size and a shard-size
+signature, per host. It cannot tell you a model is clean; it can tell you that the thing you
+audited is still the thing you are running.
 
 ```bash
 ./scripts/weights-ledger.sh --baseline --hosts "node1 node2"
-./scripts/weights-ledger.sh --hosts "node1 node2"     # exit 1 on drift
+./scripts/weights-ledger.sh --hosts "node1 node2"          # exit 1 on drift
+./scripts/weights-ledger.sh --hash --baseline --hosts ...  # content-hash every shard (hours on 500 GB)
 ```
 
-**2. Ask the model the question the attack answers.** `scripts/model-canary.sh` sends the
-published trigger shape (a benign path containing a provider-ish name) and looks for a
-download-and-execute reply. It catches the published payload family, not an unknown trigger.
+**2. Load inside a box that can't reach out.** The one thing that makes a config-level RCE
+survivable is that the loader has no egress. Same control as `egress-lock.sh`, applied where the
+model is loaded rather than where the agent runs.
 
-```bash
-./scripts/model-canary.sh --endpoint http://127.0.0.1:8000/v1 --trigger yourproject
-```
-
-**3. Load inside a box that cannot reach out.** The one thing that makes a config-level RCE
-survivable is that the loader has no egress. This is the same control as `egress-lock.sh`, applied
-where the model is loaded rather than where the agent runs.
-
-**4. Treat `config.json` as executable surface.** Pin the revision, use `safetensors`, keep
+**3. Treat `config.json` as executable surface.** Pin the revision, use `safetensors`, keep
 `transformers` current, and do not add `kernels` unless you need it.
 
 ## What this cannot buy you
