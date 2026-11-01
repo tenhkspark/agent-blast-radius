@@ -87,7 +87,9 @@ to the routes your unattended workers use, not to the route a person is typing i
 
 What it cannot do: read through base64 or a here-doc, cover `pass_through_endpoints`, or tell a
 command that *quotes* a payload from one that runs it — writing a test for this gate can itself be
-denied by it. It narrows what reaches an egress boundary; it is not the boundary.
+denied by it. It narrows what reaches an egress boundary; it is not the boundary. And if you have no
+unattended route — if everything you run is a person typing — do not enable it at all: it buys
+nothing there and costs the streaming.
 
 ## Supply chain: the part you can check
 
