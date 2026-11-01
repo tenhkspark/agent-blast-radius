@@ -101,6 +101,19 @@ check "configured term masked" 'has "$row" "[redacted]"'
 check "email masked"           'has "$row" "[email]"'
 check "raw term not present"   '! has "$row" "kids"'
 
+echo "== weights ledger"
+mkdir -p "$T/models--demo/snapshots/rev1"
+printf '{}' > "$T/models--demo/snapshots/rev1/config.json"
+printf 'x' > "$T/models--demo/snapshots/rev1/model-00001.safetensors"
+W="$ROOT/scripts/weights-ledger.sh"
+PATH_GLOB="$T/models--*/snapshots/*" BASELINE="$T/wb.tsv" "$W" --baseline >/dev/null 2>&1
+check "baseline records the snapshot" 'grep -q rev1 "$T/wb.tsv"'
+PATH_GLOB="$T/models--*/snapshots/*" BASELINE="$T/wb.tsv" "$W" >/dev/null 2>&1
+check "clean run exits 0"      '[ $? -eq 0 ]'
+printf 'y' > "$T/models--demo/snapshots/rev1/model-00002.safetensors"
+PATH_GLOB="$T/models--*/snapshots/*" BASELINE="$T/wb.tsv" "$W" >/dev/null 2>&1
+check "drift exits 1"          '[ $? -eq 1 ]'
+
 echo "== purge"
 QUARANTINE_ROOT="$T/q2" "$ROOT/scripts/ingest-quarantine.sh" "$T/note.txt" >/dev/null 2>&1
 QUARANTINE_ROOT="$T/q2" "$ROOT/scripts/ingest-quarantine.sh" --purge >/dev/null 2>&1

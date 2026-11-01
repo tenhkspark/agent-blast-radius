@@ -12,6 +12,8 @@ scripts/preflight.sh          which of the three applies to this machine (change
 scripts/egress-lock.sh        kernel-level outbound allowlist (Linux/ufw)
 scripts/exec-audit.sh         daily "what ran, where did it reach" from the agent's own logs
 scripts/ingest-quarantine.sh  outside files land read-only; only text reaches the knowledge tree
+scripts/weights-ledger.sh     pin the checkpoint you serve; exit 1 when it moves
+scripts/model-canary.sh       ask your model the question the published attack answers
 ```
 
 ## Will this help you?
@@ -45,6 +47,17 @@ all. Three consequences, in [docs/LOCAL-STACK.md](docs/LOCAL-STACK.md):
    matters most here, not the least.
 3. **Your nodes need no internet**, which is a luxury: on them a blunt protocol-agnostic block is
    complete, and costs nothing operationally.
+
+## Supply chain: the part you can check
+
+Three facts about downloaded checkpoints, all verifiable: Hub malware scanning skips files over
+2 GB (most weight files), the Hub signs commits rather than artifacts, and `trust_remote_code=False`
+stopped being a control when CVE-2026-4372 let a `config.json` name its own executable module
+(`transformers` < 5.3.0). Behavioural backdoors in the wild have no measured prevalence at all.
+
+So the two things worth doing are the boring ones: pin the snapshot and notice drift
+(`weights-ledger.sh`), and probe for the published payload shape before and after every swap
+(`model-canary.sh`). Details and citations: [docs/SUPPLY-CHAIN.md](docs/SUPPLY-CHAIN.md).
 
 ## Why this exists
 

@@ -11,6 +11,8 @@ scripts/preflight.sh          この機械でどれが使えるかを判定す�
 scripts/egress-lock.sh        外向きの許可リスト（Linux/ufw・カーネル側）
 scripts/exec-audit.sh         エージェント自身のログから「何を実行し、どこへ出たか」を日次で記録
 scripts/ingest-quarantine.sh  外から来た物は読取専用で隔離し、テキストだけ知識へ
+scripts/weights-ledger.sh     配備している重みを固定し、動いたら exit 1
+scripts/model-canary.sh       公開された攻撃が答える問いを、自分のモデルに投げる
 ```
 
 ## 自前のモデル環境を使う場合
@@ -25,6 +27,18 @@ scripts/ingest-quarantine.sh  外から来た物は読取専用で隔離し、�
 2. **知識の保管庫が、実際に触れる注入面**。ここでは取り込みの関所が最弱の脚ではなく最重要の脚
 3. **ノードにインターネットは要らない**。これは贅沢で、鈍くプロトコル非依存の遮断が完全に効き、
    運用上の損も無い
+
+## 供給網: 実際に確かめられる部分
+
+落としてきたチェックポイントについて、確かめられる事実は3つ。Hubのマルウェア走査は2GB以上の
+ファイル（＝多くの重み）を対象外にしている。Hubが署名するのはコミットで、成果物ではない。
+`trust_remote_code=False`は、CVE-2026-4372で`config.json`が実行モジュールを指定できるようになった
+時点で制御ではなくなった（`transformers` 5.3.0未満）。野生の挙動バックドアの頻度は、そもそも
+測られていない。
+
+だからやることは地味な2つ。配備しているスナップショットを固定して変化を検知する
+（`weights-ledger.sh`）、公開された payload の型を、重みを替えるたびに前後で確かめる
+（`model-canary.sh`）。根拠と引用は[docs/SUPPLY-CHAIN.md](docs/SUPPLY-CHAIN.md)。
 
 ## なぜ作ったか
 
