@@ -187,13 +187,16 @@ stop working. That is the feature. Open it when you need it, close it after.
 
 ## Verified, not asserted
 
-Run on four Linux nodes (one head + three workers) and one macOS box:
+As of 2026-11-01, on four Linux nodes (one head + three workers) and one macOS box:
 
 - 8 tagged rules per node (6 v4 + 2 v6); `https://example.com` returns `000`, i.e. no route out.
 - LAN still answers (`ping` to the management host), the 10.x fabric routes are untouched.
 - The served model keeps answering on its API; a chat completion returned normally.
 - Rollback drill: `--open` removed all 8, egress returned (`200`), `--apply` blocked it again.
 - The guard caught its own bug: the first rollback stopped at `ufw`'s interactive prompt.
+- Egress rules survive `ufw reload` on all four nodes (checked), and `ufw` is enabled at boot.
+- The ingest proxy on the workstation caught its own two bugs: a 502 on any request with a query
+  string, and a 502 on long-polling clients. Both fixed, then verified against a live client.
 
 Test suite (no network, no firewall changes, temp dirs only):
 
