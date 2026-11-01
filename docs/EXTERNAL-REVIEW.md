@@ -73,3 +73,30 @@ Every control here is a *consequence* control, and the reviewer's strongest poin
 consequence controls only matter where the consequence happens. That is the workstation. Until the
 workstation has a per-process boundary, most of this kit is instrumentation around a door that is
 still open — which is exactly what the README now says, in fewer words.
+
+## A second check, immediately before publication
+
+A different reviewer (Grok 4.7) was asked the same question with the scan results attached. Its
+answer, condensed:
+
+- **Privacy:** the keys, hostnames and emails were gone, and the author was a noreply address, but
+  one internal project name survived in a test fixture and in four unpushed commits — and would have
+  been permanent in public history.
+- **Claims:** the measurements are careful; the danger is a reader generalising them into "egress
+  solved", "poison solved". They are one node allow-list, one regex, one harness's log.
+- **Usefulness:** Linux operators of self-hosted hosts get the four controls; teams on the one
+  audited harness get the record. Missing: the other three harnesses, tool-path coverage, a
+  replacement for the removed streaming guard.
+- **Professionalism:** the leftover internal name is the unprofessional part, especially in a repo
+  whose own hygiene is part of the claim.
+- **Verdict:** fix first.
+
+What we did with it:
+
+- genericised the fixture and **rewrote the 18 commits** so the name is absent from history
+  (possible only because nothing had been pushed);
+- kept the measured numbers and added "coverage" language where a reader could over-generalise;
+- left the three gaps listed above open, on purpose, and said so in the README.
+
+Two reviewers, two different models, the same conclusion: the honest surface is small, and the
+remaining gaps are named. That is the state this repository is published in.

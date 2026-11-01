@@ -9,7 +9,7 @@ This is not a toolkit for managed agent products. If you rent the model and the 
 agent (Claude Code, Cursor, Copilot and the like), that loop is theirs to secure — you are paying
 for it. This repository is about the other case: open weights, your gateway, your knowledge store.
 
-No daemon, no framework, no dependencies beyond `bash`, `python3`, `ufw` and `zstd`.
+No daemon, no framework. Standard userland only: `bash`, `python3`, `ufw` (Linux), `shasum`, `zstd` optional.
 
 ```
 scripts/preflight.sh          which of the three applies to this machine (changes nothing)
