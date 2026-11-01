@@ -22,7 +22,8 @@ done
 
 echo "== portability lint"
 # stat -f is BSD-only; on Linux it silently prints filesystem info instead of a size.
-check "no BSD-only stat flags" '! grep -q "stat -f" "$ROOT"/scripts/*.sh'
+# BSD-only unless a Linux fallback is on the same line
+check "no unguarded BSD-only stat" '! awk "/stat -f/ && !/stat -c/ {bad=1} END{exit bad?0:1}" "$ROOT"/scripts/*.sh'
 
 echo "== egress-lock (dry run only)"
 out=$("$ROOT/scripts/egress-lock.sh" 2>&1)
