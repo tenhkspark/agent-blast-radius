@@ -47,6 +47,17 @@ more useful than publishing only the parts we agree with.
   sold as detection would be. The distinction is in the first paragraph of the README, and it is
   the reason the repository leads with what it does not do.
 
+## A measurement the review prompted
+
+We checked *where* our own research traffic goes, rather than where we assumed. Fetching
+`example.com` through the MCP extract tool returned the page and produced **no proxy entry**; the
+same URL through the harness's own fetch tool also bypassed. Only the gateway's Matrix traffic
+appeared in the proxy log.
+
+So on this box the proxy covers the *gateway*, not the *tools*. The reviewer's "partial proxy" point
+is stronger than we first wrote: it is not one harness of four, it is one code path inside one
+process. That is now what `HARNESS-MATRIX.md` says, and the README calls it coverage, not control.
+
 ## What changed because of the review
 
 - README: "Does this apply to you?" now opens the file, so a laptop user is told to leave.

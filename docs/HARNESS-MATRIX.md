@@ -6,12 +6,16 @@ Measured on one macOS box, 2026-11-01. Legend: **measured** = we ran it and watc
 | Question | DeepSeek Harness | Hermes Agent | OpenCode | pi |
 | --- | --- | --- | --- | --- |
 | Model path | board `127.0.0.1:4000` | board `127.0.0.1:4000` | board `127.0.0.1:4000` | grok shim `127.0.0.1:4321` |
-| Honours `HTTPS_PROXY`? | yes for LLM/search/MCP; **`web_fetch` is exempt by design** (measured: fetched example.com with no proxy entry) | yes (measured: Matrix long-poll and api.deepseek.com in the proxy log) | evident (binary contains proxy support); not run | unknown |
+| Honours `HTTPS_PROXY`? | **partly**: the launcher installs a proxy policy for LLM/search/MCP, but `web_fetch` is exempt by design (measured: fetched example.com, no proxy entry) | **partly**: the gateway's own traffic is proxied (Matrix long-poll observed), but the MCP tool process bypassed the proxy in our test (extracted example.com, no proxy entry) | evident (binary contains proxy support); not run | unknown |
 | Tool calls recorded with arguments? | yes, JSONL per session | no — the log records "tool terminal completed (5.59s, 140 chars)" and not the command | no table found in its DB | no store found |
 | Can it be stopped from running shell? | yes — sandbox modes per session | yes — `platform_toolsets` per platform (measured: terminal/file/code/browser disabled for Matrix) | unknown | unknown |
 
 ## What this means
 
+- **A proxy env var is not coverage.** On our box the *research tools* — the MCP extract tool and
+  the harness's own fetch — both returned content with no proxy entry, while the gateway's Matrix
+  traffic did appear. Same machine, same env, three different answers. If the control matters, verify
+  it per tool, not per process name.
 - **The proxy is not a boundary across harnesses.** Two of the four are Node binaries. Node's
   built-in `fetch` ignores proxy environment variables unless the harness wires a dispatcher; one of
   ours does, one we did not establish. If you need egress control, put it where the routing happens
