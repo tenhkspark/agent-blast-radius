@@ -80,6 +80,11 @@ Two details decide whether it works at all:
 - **Rewrite, not block.** `on_disallowed_action: rewrite` swaps the tool call for a message, so the
   agent learns what happened and continues. `block` fails the entire request.
 
+**It costs streaming.** Measured here: with the guardrail applied to a model, the first token
+arrived at 0.81 s instead of 0.17 s, because the proxy buffers the response to inspect the tool
+call. Non-streaming latency was unchanged (0.817 s direct vs 0.821 s through the proxy). Attach it
+to the routes your unattended workers use, not to the route a person is typing into.
+
 What it cannot do: read through base64 or a here-doc, cover `pass_through_endpoints`, or tell a
 command that *quotes* a payload from one that runs it — writing a test for this gate can itself be
 denied by it. It narrows what reaches an egress boundary; it is not the boundary.

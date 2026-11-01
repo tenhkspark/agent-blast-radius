@@ -20,6 +20,16 @@
 #   - A command that merely *quotes* a suspicious string is denied too. That is a real false
 #     positive: writing a test for this gate can itself be blocked by it.
 #   - It is additive. It does not replace an egress allow-list; it narrows what reaches one.
+#   - IT COSTS STREAMING. Measured on one box: with the guardrail applied to a model, the first
+#     token arrived at 0.81 s instead of 0.17 s, because LiteLLM buffers the response to inspect
+#     the tool call. Non-streaming latency was unchanged (0.817 vs 0.821 s). So attach it to the
+#     routes used by unattended workers, not to the route a person is typing into:
+#
+#         - model_name: worker-route
+#           litellm_params:
+#             guardrails: ["tool-permission"]
+#
+#     Leave `default_on` off unless you accept losing token streaming everywhere.
 
 guardrails:
   - guardrail_name: "tool-permission"
