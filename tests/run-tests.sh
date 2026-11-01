@@ -20,6 +20,10 @@ for f in "$ROOT"/scripts/*.sh; do
   if bash -n "$f" 2>/dev/null; then ok "bash -n $(basename "$f")"; else bad "bash -n $(basename "$f")"; fi
 done
 
+echo "== portability lint"
+# stat -f is BSD-only; on Linux it silently prints filesystem info instead of a size.
+check "no BSD-only stat flags" '! grep -q "stat -f" "$ROOT"/scripts/*.sh'
+
 echo "== egress-lock (dry run only)"
 out=$("$ROOT/scripts/egress-lock.sh" 2>&1)
 check "prints the deny"        'printf "%s" "$out" | grep -q "deny out to any"'

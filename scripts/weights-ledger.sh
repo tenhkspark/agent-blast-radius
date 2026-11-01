@@ -36,7 +36,7 @@ probe() {  # runs on the target: one line per snapshot
     small=$(find -L "$snap" -maxdepth 1 -type f \( -name '*.json' -o -name '*.index.json' -o -name '*.txt' \) 2>/dev/null | sort | xargs shasum -a 256 2>/dev/null | shasum -a 256 | awk '{print $1}')
     shards=$(find -L "$snap" -maxdepth 1 -type f \( -name '*.safetensors' -o -name '*.bin' -o -name '*.gguf' \) 2>/dev/null | wc -l | tr -d ' ')
     bytes=$(du -skL "$snap" 2>/dev/null | awk '{print $1}')
-    sizes=$(find -L "$snap" -maxdepth 1 -type f \( -name "*.safetensors" -o -name "*.bin" -o -name "*.gguf" \) -exec stat -f %z {} \; 2>/dev/null | sort -n | shasum -a 256 | awk '{print $1}')
+    sizes=$(find -L "$snap" -maxdepth 1 -type f \( -name "*.safetensors" -o -name "*.bin" -o -name "*.gguf" \) -exec wc -c {} \; 2>/dev/null | awk '{print $1}' | sort | shasum -a 256 | awk '{print $1}')
     printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$model" "$rev" "${small:-none}" "${shards:-0}" "${bytes:-0}" "${sizes:-none}"
   done
 }
