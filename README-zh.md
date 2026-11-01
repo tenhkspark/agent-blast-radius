@@ -108,7 +108,7 @@ sudo ./scripts/egress-lock.sh --open     # 只删除带本工具标签的规则
 LAN 仍通，10.x fabric 路由未动；模型 API 正常应答；回滚演练 `--open` 删掉 8 条、外网恢复 `200`、
 `--apply` 再次阻断；防自锁在真实回滚中抓到了自己的 bug（卡在 `ufw` 的交互确认）。
 
-测试（不碰网络、不改防火墙，全部在临时目录）：`./tests/run-tests.sh`（34 项）。
+测试（不碰网络、不改防火墙，全部在临时目录）：`./tests/run-tests.sh`（37 项）。
 
 ## 个人数据
 

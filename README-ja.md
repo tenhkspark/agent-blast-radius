@@ -14,6 +14,15 @@ scripts/ingest-quarantine.sh  外から来た物は読取専用で隔離し、�
 scripts/weights-ledger.sh     配備している重みを固定し、動いたら exit 1
 ```
 
+## あなたに効くか
+
+- **Linuxのマシンかコンテナでエージェントを動かしている** → 全部効く。まず`preflight.sh`
+- **macOSでClaude Code・Cursor等** → 出口の関所は効かない（`ufw`が無く、`pf`はプロセスを見ない）。
+  サンドボックス＋ローカルプロキシ（`srt`・`cplt`・`Agent Safehouse`）を使う。取り込みと監査は、
+  ハーネスがログを書いていれば使える
+- **バックドアを検知したい** → 何も検知しない。[SELF-CRITIQUE](docs/SELF-CRITIQUE.md)を先に読んで、
+  それでも「結果側の制御」が欲しいか決める
+
 ## 中身の案内
 
 - **docs/[THREAT-MODEL.md](docs/THREAT-MODEL.md)** — 3つの別問題と、どの関所がどれに効くか
@@ -22,13 +31,16 @@ scripts/weights-ledger.sh     配備している重みを固定し、動いた�
 - **docs/[SUPPLY-CHAIN.md](docs/SUPPLY-CHAIN.md)** — Hubが確かめてくれる物と、くれない物
 - **docs/[DATA-HANDLING-ja.md](docs/DATA-HANDLING-ja.md)** — 何を残すか、いつ消すか、どう消すか
 - **docs/[SELF-CRITIQUE.md](docs/SELF-CRITIQUE.md)** — この設計を3巡攻撃してみた記録と、出てきたバグ
+- **docs/[ADAPTERS.md](docs/ADAPTERS.md)** — 自分のハーネスのログを監査に読ませる方法
+- **docs/[HARNESS-MATRIX.md](docs/HARNESS-MATRIX.md)** — 4ハーネスを実測: プロキシ・監査・ツール制限
 
 ## まず1本
 
 この機械で関所が使えるかだけを、何も変えずに判定する。
 
 ```bash
-./scripts/preflight.sh
+./scripts/preflight.sh        # この機械でどれが効くか（何も変えない）
+./examples/demo.sh            # 3つを30秒で見る。モデル不要
 ```
 
 ## 自前のモデル環境を使う場合
@@ -169,7 +181,7 @@ Linux4台（head 1 + worker 3）とmacOS1台で実施。
 - 戻しの訓練: `--open`で8本消えて外向きが`200`、`--apply`で再び不通
 - 締め出し防止が自分のバグを捕まえた: 最初の戻しは`ufw`の対話確認で止まっていた
 
-テスト（ネットワークもファイアウォールも触らない、全部一時ディレクトリ）: `./tests/run-tests.sh`（34件）
+テスト（ネットワークもファイアウォールも触らない、全部一時ディレクトリ）: `./tests/run-tests.sh`（37件）
 
 ## 先例
 

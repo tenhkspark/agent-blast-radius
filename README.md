@@ -15,6 +15,17 @@ scripts/ingest-quarantine.sh  outside files land read-only; only text reaches th
 scripts/weights-ledger.sh     pin the checkpoint you serve; exit 1 when it moves
 ```
 
+## Does this apply to you?
+
+- **A Linux box or container runs your agent** — all of it applies. Start with `preflight.sh`.
+- **A macOS laptop with Claude Code, Cursor or a similar agent** — the egress gate does not apply
+  (no `ufw`, and `pf` cannot see processes). Use a sandbox plus a localhost proxy instead
+  (`srt`, `cplt`, `Agent Safehouse`); this kit's ingest gate and audit still work if your harness
+  writes a log.
+- **You want to detect a backdoored model** — nothing here detects anything. Read
+  [docs/SELF-CRITIQUE.md](docs/SELF-CRITIQUE.md) first, then decide whether consequence-level
+  control is what you actually want.
+
 ## What is in here
 
 - **docs/[THREAT-MODEL.md](docs/THREAT-MODEL.md)** — three different problems, and which gate touches which
@@ -23,13 +34,16 @@ scripts/weights-ledger.sh     pin the checkpoint you serve; exit 1 when it moves
 - **docs/[SUPPLY-CHAIN.md](docs/SUPPLY-CHAIN.md)** — what the Hub does and does not check for you
 - **docs/[DATA-HANDLING.md](docs/DATA-HANDLING.md)** — what gets recorded, for how long, and how to delete it
 - **docs/[SELF-CRITIQUE.md](docs/SELF-CRITIQUE.md)** — three rounds of attacking this design, and the bugs that came out
+- **docs/[ADAPTERS.md](docs/ADAPTERS.md)** — how to make the audit read your harness's log
+- **docs/[HARNESS-MATRIX.md](docs/HARNESS-MATRIX.md)** — four harnesses measured: proxy, audit, tool restrictions
 
 ## Start here
 
 One command tells you whether the gates apply to this machine; it changes nothing.
 
 ```bash
-./scripts/preflight.sh
+./scripts/preflight.sh        # which gates apply here (changes nothing)
+./examples/demo.sh            # see all three run, 30 seconds, no model required
 ```
 
 ## If you run your own model
@@ -201,7 +215,7 @@ As of 2026-11-01, on four Linux nodes (one head + three workers) and one macOS b
 Test suite (no network, no firewall changes, temp dirs only):
 
 ```bash
-./tests/run-tests.sh      # 34 checks
+./tests/run-tests.sh      # 37 checks
 ```
 
 ## Where to put the gate

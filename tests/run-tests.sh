@@ -20,6 +20,12 @@ for f in "$ROOT"/scripts/*.sh; do
   if bash -n "$f" 2>/dev/null; then ok "bash -n $(basename "$f")"; else bad "bash -n $(basename "$f")"; fi
 done
 
+echo "== demo"
+out=$(bash "$ROOT/examples/demo.sh" 2>&1); rc=$?
+check "demo runs clean"        '[ "$rc" -eq 0 ]'
+check "demo shows a record"    'has "$out" "ls -la /home/user/project"'
+check "demo shows a flag"      'has "$out" "fetch_and_run_sh"'
+
 echo "== portability lint"
 # stat -f is BSD-only; on Linux it silently prints filesystem info instead of a size.
 # BSD-only unless a Linux fallback is on the same line
