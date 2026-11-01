@@ -16,14 +16,31 @@ scripts/weights-ledger.sh     pin the checkpoint you serve; exit 1 when it moves
 scripts/model-canary.sh       ask your model the question the published attack answers
 ```
 
-## Will this help you?
-
-Run this first. It looks at the machine and tells you which gates apply — instead of letting you
-install half a kit on a laptop.
+## Start here: one command
 
 ```bash
-./scripts/preflight.sh
+./scripts/quickcheck.sh --endpoint http://127.0.0.1:8000/v1
 ```
+
+It answers two questions in about a minute and prints a block you can paste into a thread:
+do the gates apply to this machine, and does the model behave differently when the published
+trigger shape appears.
+
+```
+== verdict: PASS
+== paste this
+host=Linux x86_64
+endpoint=http://127.0.0.1:8000/v1 model=my-model n=2
+verdict=PASS
+```
+
+The second half is a **paired** experiment: the same task, once with a neutral path and once with
+the trigger-shaped path. Sending the same input twice would tell you very little — a model differs
+from itself at any temperature above zero, and on many serving stacks even at zero. The control is
+what makes a difference meaningful. If the trigger raises the payload rate, you have something
+specific to fix and something concrete to show other people.
+
+If you only want the machine check: `./scripts/preflight.sh`.
 
 Typical answers:
 
