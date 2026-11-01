@@ -1,0 +1,14 @@
+# local runs
+state/
+quarantine/
+library/
+*.log
+logs/
+.DS_Store
+
+# keep the examples, ignore the live configs
+configs/*.conf
+!configs/*.example
+
+# editor
+*.swp

@@ -1,0 +1,17 @@
+# exec-audit.sh settings. Copy to configs/audit.conf (git-ignored) and edit.
+
+# Where the collected records live.
+AUDIT_STATE="./state"
+
+# Session store to read. This default is the DeepSeek Harness layout.
+AUDIT_SESS="$HOME/.dsh/sessions"
+
+# Days of history to scan per run. Overlap is free because calls are deduped by id.
+AUDIT_DAYS=2
+
+# Append flagged commands here. Point it at whatever already pages you; leave empty
+# to record without notifying anyone.
+AUDIT_ALERTS=""
+
+# Cap on notification lines per run, so a noisy day does not become a wall of text.
+MAX_ALERTS=6

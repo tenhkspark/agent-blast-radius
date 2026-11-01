@@ -1,0 +1,10 @@
+# ingest-quarantine.sh settings. Copy to configs/quarantine.conf (git-ignored) and edit.
+
+# Where the quarantined originals and their text renditions are kept.
+QUARANTINE_ROOT="./quarantine"
+
+# Where --install copies the text rendition. Empty means ./library/text next to the script.
+LIBRARY_TEXT=""
+
+# Refuse anything larger than this (bytes). 200 MB.
+MAX_BYTES=209715200

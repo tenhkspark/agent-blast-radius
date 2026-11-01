@@ -1,0 +1,22 @@
+# egress-lock.sh settings. Copy to configs/egress.conf (git-ignored) and edit.
+# Everything here is an allow-list: anything not listed cannot leave the host.
+
+# Tag on every rule this tool owns. --open deletes only rules with this comment,
+# so keep it unique and do not reuse it for rules you wrote by hand.
+TAG="agent-egress-lock"
+
+# CIDRs that may be reached. Keep this as small as the box can survive with:
+#   loopback, your LAN, the compute fabric, tailnet/VPN range, container bridges.
+ALLOW_CIDRS="127.0.0.0/8 192.168.0.0/16 10.0.0.0/8 172.16.0.0/12 100.64.0.0/10"
+
+# Interfaces that may send, in addition to loopback (which is always kept).
+ALLOW_IFACES=""
+
+# Probe used by --verify. It must be a host you expect to be unreachable after the lock.
+PROBE_URL="https://example.com"
+
+# A host you expect to stay reachable (your gateway, a management box). Optional.
+LAN_PROBE=""
+
+# Set to 1 to also lock docker containers (EXPERIMENTAL: DOCKER-USER chain).
+CONTAINERS=0
