@@ -22,25 +22,45 @@ CONF=${QUARANTINE_CONF:-$HERE/../configs/quarantine.conf}
 ROOT=${QUARANTINE_ROOT:-$HERE/../quarantine}
 LIBRARY_TEXT=${LIBRARY_TEXT:-}
 MAX_BYTES=${MAX_BYTES:-209715200}   # 200 MB
+RETENTION_DAYS=${RETENTION_DAYS:-365}  # informational; nothing is deleted without --purge
 D=$(date +%F)
 Q=$ROOT/$D
 
-SRC=${1:-}
-[ -z "$SRC" ] && { sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
-shift
-ID=""; TITLE=""; FORCE=0; INSTALL=0
+SRC=""
+ID=""; TITLE=""; FORCE=0; INSTALL=0; PURGE=0; PURGE_OLDER=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    --id) ID=${2:-}; shift ;;
-    --title) TITLE=${2:-}; shift ;;
-    --force) FORCE=1 ;;
-    --install) INSTALL=1 ;;
-    *) echo "unknown argument: $1" >&2; exit 2 ;;
+    --id) ID=${2:-}; shift 2 ;;
+    --title) TITLE=${2:-}; shift 2 ;;
+    --force) FORCE=1; shift ;;
+    --install) INSTALL=1; shift ;;
+    --purge) PURGE=1; shift ;;
+    --purge-older) PURGE_OLDER=${2:-}; shift 2 ;;
+    -h|--help) sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -*) echo "unknown argument: $1" >&2; exit 2 ;;
+    *) if [ -z "$SRC" ]; then SRC=$1; else echo "one source at a time" >&2; exit 2; fi; shift ;;
   esac
-  shift
 done
 
+# Deletion is explicit, never automatic: quarantined material may be evidence.
+if [ "$PURGE" = 1 ]; then
+  n=$(find "$ROOT" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+  find "$ROOT" -mindepth 1 -maxdepth 1 -type d -exec rm -rf -- {} + 2>/dev/null
+  echo "purged $n quarantine day(s) under $ROOT"
+  exit 0
+fi
+if [ -n "$PURGE_OLDER" ]; then
+  case "$PURGE_OLDER" in *[!0-9]*) echo "--purge-older needs a number of days" >&2; exit 2 ;; esac
+  n=$(find "$ROOT" -mindepth 1 -maxdepth 1 -type d -mtime +"$PURGE_OLDER" 2>/dev/null | wc -l | tr -d ' ')
+  find "$ROOT" -mindepth 1 -maxdepth 1 -type d -mtime +"$PURGE_OLDER" -exec rm -rf -- {} + 2>/dev/null
+  echo "purged $n quarantine day(s) older than $PURGE_OLDER days"
+  exit 0
+fi
+
+[ -z "$SRC" ] && { sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
+
 mkdir -p "$Q/raw" "$Q/text" "$ROOT"
+chmod 700 "$ROOT" "$Q" "$Q/raw" "$Q/text" 2>/dev/null || true
 tmp=""
 trap 'if [ -n "$tmp" ] && [ -f "$tmp" ]; then rm -f "$tmp"; fi' EXIT
 
@@ -139,6 +159,7 @@ esac
 
 chars=0
 [ -f "$text" ] && chars=$(wc -c < "$text" | tr -d ' ')
+chmod 600 "$text" 2>/dev/null || true
 printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
   "$(date '+%F %T')" "$short" "$size" "$mime" "$ext" "$how" "$chars" "$SRC" >> "$Q/manifest.tsv"
 
@@ -146,6 +167,8 @@ echo "quarantined: $raw"
 echo "  sha256: $sha"
 echo "  type:   $mime ($how, ${chars} bytes of text)"
 echo "  text:   $text"
+old=$(find "$ROOT" -mindepth 1 -maxdepth 1 -type d -mtime +"$RETENTION_DAYS" 2>/dev/null | wc -l | tr -d ' ')
+[ "$old" -gt 0 ] && echo "  note:   $old day(s) are older than RETENTION_DAYS=$RETENTION_DAYS; run --purge-older $RETENTION_DAYS if you no longer need them"
 
 if [ "$INSTALL" = 1 ]; then
   if [ -z "$ID" ]; then echo "  --install needs --id NAME" >&2; exit 1; fi

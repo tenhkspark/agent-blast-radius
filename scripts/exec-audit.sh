@@ -26,7 +26,10 @@ SESS=${AUDIT_SESS:-$HOME/.dsh/sessions}
 DAYS=${AUDIT_DAYS:-2}
 ALERTS=${AUDIT_ALERTS:-}
 MAX_ALERTS=${MAX_ALERTS:-6}
+RETENTION_DAYS=${RETENTION_DAYS:-90}   # 0 keeps forever
+REDACT_TERMS=${REDACT_TERMS:-}         # comma list of names/orgs to mask in the record
 ZSTD=${ZSTD:-$(command -v zstd || true)}
+PURGE=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -34,6 +37,8 @@ while [ $# -gt 0 ]; do
     --sess) SESS=${2:-}; shift ;;
     --alert-file) ALERTS=${2:-}; shift ;;
     --state) STATE=${2:-}; shift ;;
+    --purge) PURGE=1 ;;
+    --retention) RETENTION_DAYS=${2:-90}; shift ;;
     -h|--help) sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
@@ -41,6 +46,8 @@ while [ $# -gt 0 ]; do
 done
 
 mkdir -p "$STATE/logs"
+# The record is personal data about you, so it is readable by you only.
+chmod 700 "$STATE" "$STATE/logs" 2>/dev/null || true
 LOG=$STATE/logs/exec-audit.log
 OUT=$STATE/exec-$(date +%Y%m).tsv
 SEEN=$STATE/seen-callids.txt
@@ -74,6 +81,29 @@ import json, os, re, subprocess, sys, time, datetime
 sess_dir, days, out_path, seen_path, alert_path, max_alerts, zstd = sys.argv[1:8]
 max_alerts = int(max_alerts or 6)
 cutoff = time.time() - int(days) * 86400
+
+# Personal data minimisation. Commands carry paths through home directories, and those paths
+# carry people. Mask the obvious shapes before anything is written to disk: this record is
+# read by humans and kept for months, and it should not become a second copy of the data it
+# exists to protect.
+import re as _re
+HOME_DIR = os.path.expanduser("~")
+TERMS = [t.strip() for t in os.environ.get("REDACT_TERMS", "").split(",") if t.strip()]
+_EMAIL = _re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
+_UUID = _re.compile(r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b")
+_HEX = _re.compile(r"\b[0-9a-f]{32,}\b")
+_PHONE = _re.compile(r"(?<![\w-])\+?\d[\d\- ]{8,}\d(?![\w-])")
+
+def redact(s):
+    s = s.replace(HOME_DIR, "~")
+    s = _EMAIL.sub("[email]", s)
+    s = _UUID.sub("[uuid]", s)
+    s = _HEX.sub("[hex]", s)
+    s = _PHONE.sub("[num]", s)
+    for t in TERMS:
+        if t:
+            s = s.replace(t, "[redacted]")
+    return s
 
 # Each pattern is (label, all-of-needles). Order is priority: first match wins.
 PATTERNS = [
@@ -143,7 +173,7 @@ for p in sorted(files):
         except Exception:
             args = {}
         body = (args.get("command") or args.get("file_path") or args.get("url") or "")
-        body = " ".join(str(body).split())[:240]
+        body = redact(" ".join(str(body).split()))[:240]
         ts = datetime.datetime.fromtimestamp((o.get("time") or 0) / 1000).strftime("%Y-%m-%d %H:%M:%S")
         rows.append((ts, sid, str(d.get("name") or "?"), body))
         new_keys.append(key)
@@ -222,5 +252,25 @@ fi
     | awk 'NR>1{split($9,a,"->"); print $1, a[1], a[2]}' | sort -u
 } > "$EGRESS" 2>>"$LOG"
 
+if [ "$PURGE" = 1 ]; then
+  n=$(find "$STATE" -type f \( -name 'exec-*.tsv*' -o -name 'egress-*.txt' -o -name 'seen-callids.txt' -o -name 'rowcounts.txt' \) 2>/dev/null | wc -l | tr -d ' ')
+  find "$STATE" -type f \( -name 'exec-*.tsv*' -o -name 'egress-*.txt' -o -name 'seen-callids.txt' -o -name 'rowcounts.txt' \) -delete 2>/dev/null
+  log "purged $n collected files"
+  echo "purged $n collected files under $STATE"
+  exit 0
+fi
+
+# Retention. Default 90 days, because a personal record that never expires is a liability
+# rather than an asset. Set RETENTION_DAYS=0 if you have a reason to keep them.
+if [ "$RETENTION_DAYS" -gt 0 ]; then
+  old=$(find "$STATE" -type f \( -name 'exec-*.tsv*' -o -name 'egress-*.txt' \) -mtime +"$RETENTION_DAYS" 2>/dev/null || true)
+  if [ -n "$old" ]; then
+    printf '%s\n' "$old" | while read -r f; do log "retention: removed $f"; done
+    printf '%s\n' "$old" | while read -r f; do rm -f -- "$f"; done
+    echo "retention: removed $(printf '%s\n' "$old" | wc -l | tr -d ' ') expired file(s)"
+  fi
+fi
+
+chmod 600 "$OUT" "$SEEN" "$EGRESS" 2>/dev/null || true
 log "done rows_file=$OUT egress=$EGRESS"
 echo "collected: $OUT"

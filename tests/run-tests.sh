@@ -78,6 +78,34 @@ printf 'hello\n' > "$T/doc.txt"
 QUARANTINE_ROOT="$T/quarantine" LIBRARY_TEXT="$T/lib" "$ROOT/scripts/ingest-quarantine.sh" "$T/doc.txt" --id demo --install >/dev/null 2>&1
 check "installs text on --install" 'test -f "$T/lib/demo.md"'
 
+echo "== preflight"
+out=$("$ROOT/scripts/preflight.sh" 2>&1)
+check "reports a summary"      'has "$out" "summary"'
+check "names the host"         'has "$out" "host:"'
+
+echo "== redaction"
+mkdir -p "$T/rs/p/session-r"
+cat > "$T/rs/p/session-r/a.jsonl" <<'JSONL'
+{"type":"tool/call","time":1,"data":{"callId":"r1","name":"bash","arguments":"{\"command\":\"cat /HOME_PLACEHOLDER/secret/kids/name.txt mail me@example.com\"}"}}
+JSONL
+python3 - "$T/rs/p/session-r/a.jsonl" <<'PY'
+import json, sys, os
+p = sys.argv[1]
+raw = open(p).read().replace("/HOME_PLACEHOLDER", os.path.expanduser("~"))
+open(p, "w").write(raw)
+PY
+REDACT_TERMS="kids" "$ROOT/scripts/exec-audit.sh" --state "$T/rst" --sess "$T/rs" >/dev/null 2>&1
+row=$(grep -v '^#' "$T"/rst/exec-*.tsv | head -1)
+check "home path becomes ~"    'has "$row" "~/secret"'
+check "configured term masked" 'has "$row" "[redacted]"'
+check "email masked"           'has "$row" "[email]"'
+check "raw term not present"   '! has "$row" "kids"'
+
+echo "== purge"
+QUARANTINE_ROOT="$T/q2" "$ROOT/scripts/ingest-quarantine.sh" "$T/note.txt" >/dev/null 2>&1
+QUARANTINE_ROOT="$T/q2" "$ROOT/scripts/ingest-quarantine.sh" --purge >/dev/null 2>&1
+check "purge empties the store" '[ -z "$(ls -A "$T/q2" 2>/dev/null)" ]'
+
 if [ "${NETWORK_TESTS:-0}" = 1 ]; then
   echo "== network (opt-in)"
   out=$(QUARANTINE_ROOT="$T/quarantine" "$ROOT/scripts/ingest-quarantine.sh" https://example.com 2>&1)

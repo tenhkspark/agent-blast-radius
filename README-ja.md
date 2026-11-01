@@ -1,14 +1,30 @@
 # agent-blast-radius
 
+[English](README.md) | [日本語](README-ja.md) | [简体中文](README-zh.md) | [한국어](README-ko.md)
+
 信用しきれないエージェント用の小さな関所3つ。**届く先を絞る**、**実行した物を残す**、
 **持ち込む物を隔離する**。デーモン無し、フレームワーク無し、依存は`bash`と`python3`と
 `ufw`と`zstd`だけ。
 
 ```
+scripts/preflight.sh          この機械でどれが使えるかを判定する（何も変えない）
 scripts/egress-lock.sh        外向きの許可リスト（Linux/ufw・カーネル側）
 scripts/exec-audit.sh         エージェント自身のログから「何を実行し、どこへ出たか」を日次で記録
 scripts/ingest-quarantine.sh  外から来た物は読取専用で隔離し、テキストだけ知識へ
 ```
+
+## 自前のモデル環境を使う場合
+
+エージェントのセキュリティ記事は「借りたモデル＋ノートPC」を前提に書かれている。このキットは
+逆を想定している。重みは自分のハード、ハーネスは作業用の1台、知識はローカルの保管庫から
+プロンプトへ取り込まれ、推論ノードはインターネットに出る必要が無い。詳しくは
+[docs/LOCAL-STACK-ja.md](docs/LOCAL-STACK-ja.md)。要点は3つ。
+
+1. **重みを学習していない**ので、論文の事前学習毒はこちらでは供給網の問題として届く。監査は
+   できない。できるのは結果側の統制だけ
+2. **知識の保管庫が、実際に触れる注入面**。ここでは取り込みの関所が最弱の脚ではなく最重要の脚
+3. **ノードにインターネットは要らない**。これは贅沢で、鈍くプロトコル非依存の遮断が完全に効き、
+   運用上の損も無い
 
 ## なぜ作ったか
 
@@ -102,9 +118,19 @@ Linux4台（head 1 + worker 3）とmacOS1台で実施。
 - 戻しの訓練: `--open`で8本消えて外向きが`200`、`--apply`で再び不通
 - 締め出し防止が自分のバグを捕まえた: 最初の戻しは`ufw`の対話確認で止まっていた
 
-テスト（ネットワークもファイアウォールも触らない、全部一時ディレクトリ）: `./tests/run-tests.sh`
+テスト（ネットワークもファイアウォールも触らない、全部一時ディレクトリ）: `./tests/run-tests.sh`（28件）
 
 ## 先例
+
+2つに分ける。ローカル環境の運用者が実際に借りられる物と、商用エージェント向けに作られた物
+（模様はそこで作られたので敬意は払うが、こちらには要らない）。
+
+**ローカルに移せる物**: `iron-proxy`（ドメイン許可リストと秘密の注入）、`Tetragon`（Linuxでの
+カーネル側の真実）、`dsh-baseline`（ハーネス側の方針とハッシュ連鎖）、`agent-cordon`と
+`zeph-sanitizer`（ファイル隔離より遥かに進んだ取り込み検査）、
+[awesome-agent-sandboxes](https://github.com/msyvr/awesome-agent-sandboxes)（索引）。
+
+**借りたモデル向け（こちらの環境には要らない）**:
 
 先に名乗るべき物がたくさんある。`srt`（Seatbelt＋ローカルプロキシ）、`cplt`（QUIC穴の
 分析が最良）、`nono`、`agentsh`、`ai-jail`、`Agent Safehouse`、`SpaceAI Guard`、`iron-proxy`
@@ -114,6 +140,18 @@ Linux4台（head 1 + worker 3）とmacOS1台で実施。
 
 このリポジトリの隙間は狭い。依存なしの3本、デーモン無し、方針言語無し、一晩で読めて
 その日のうちに当てられる、というだけ。
+
+## 個人情報
+
+監査の記録は、その機械を使う人の個人情報になる。だから書く前にマスクする（ホーム→`~`、
+メール→`[email]`、電話らしい数字列→`[num]`、UUID/長い16進→`[uuid]`/`[hex]`、加えて
+`REDACT_TERMS`）。記録は既定90日で失効し、`--purge`で一括削除。隔離物は自動削除せず
+`--purge`/`--purge-older N`で明示的に消す。ディレクトリ`0700`、ファイル`0600`、テレメトリ無し、
+自分で指定した取得URL以外の外向き接続も無し。
+
+棚卸しと保持・削除の規則、APPI/PIPL/PIPA/GDPRとの対応は
+[docs/DATA-HANDLING-ja.md](docs/DATA-HANDLING-ja.md)（[English](docs/DATA-HANDLING.md) /
+[中文](docs/DATA-HANDLING-zh.md) / [한국어](docs/DATA-HANDLING-ko.md)）。法的助言ではない。
 
 ## ライセンス
 

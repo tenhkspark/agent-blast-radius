@@ -1,5 +1,15 @@
 # Threat model
 
+**TL;DR** — EN: three problems get discussed as one: a backdoor in the weights (you cannot audit
+it), instructions arriving at inference time (you can gate the channels), and the supply chain (you
+can pin and record). This kit addresses only consequences, never detection.
+JA: 重みのバックドア（監査できない）、推論時の指示注入（経路なら塞げる）、供給網（固定して記録する）。
+本キットは結果側だけで、検知はしない。
+ZH: 权重里的后门（无法审计）、推理时的指令注入（通道可以设闸）、供应链（固定并记录）。
+本工具只处理后果，从不做检测。
+KO: 가중치 안의 백도어(감사 불가), 추론 시점의 지시 주입(경로는 막을 수 있음), 공급망(고정하고 기록).
+이 도구는 결과만 다루고 탐지는 하지 않는다.
+
 Three different problems that get discussed as one.
 
 ## T1. A backdoor in the weights

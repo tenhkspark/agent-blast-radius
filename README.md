@@ -1,15 +1,50 @@
 # agent-blast-radius
 
+[English](README.md) | [日本語](README-ja.md) | [简体中文](README-zh.md) | [한국어](README-ko.md)
+
 Three small gates for an agent you cannot fully trust: **lock what it can reach**,
 **record what it ran**, **quarantine what you feed it**.
 
 No daemon, no framework, no dependencies beyond `bash`, `python3`, `ufw` and `zstd`.
 
 ```
+scripts/preflight.sh          which of the three applies to this machine (changes nothing)
 scripts/egress-lock.sh        kernel-level outbound allowlist (Linux/ufw)
 scripts/exec-audit.sh         daily "what ran, where did it reach" from the agent's own logs
 scripts/ingest-quarantine.sh  outside files land read-only; only text reaches the knowledge tree
 ```
+
+## Will this help you?
+
+Run this first. It looks at the machine and tells you which gates apply — instead of letting you
+install half a kit on a laptop.
+
+```bash
+./scripts/preflight.sh
+```
+
+Typical answers:
+
+- **Linux box or VM that runs the agent** — all three apply. This is who the kit is for.
+- **macOS laptop** — the audit and the ingest gate apply; the network cut does not, because macOS
+  has no `ufw` and no per-agent packet filter. Use a sandbox plus a localhost proxy
+  ([docs/WHERE-TO-LOCK.md](docs/WHERE-TO-LOCK.md)); that is a better boundary anyway.
+- **You use a harness this repo has no adapter for** — the ingest gate still works, the audit has
+  nothing to read until you add a parser.
+
+## If you run your own model
+
+Most agent-security advice is written for someone renting a model through an API. This kit was
+built the other way round: weights on your own hardware, a harness on a workstation, a local
+knowledge store that gets retrieved into the prompt, and inference nodes that need no internet at
+all. Three consequences, in [docs/LOCAL-STACK.md](docs/LOCAL-STACK.md):
+
+1. **You did not train the weights**, so the paper's training-time poisoning reaches you as a
+   supply-chain problem. You cannot audit it; you can only control the consequence.
+2. **Your knowledge store is the injection surface you can actually reach.** Ingest is the leg that
+   matters most here, not the least.
+3. **Your nodes need no internet**, which is a luxury: on them a blunt protocol-agnostic block is
+   complete, and costs nothing operationally.
 
 ## Why this exists
 
@@ -127,7 +162,7 @@ Run on four Linux nodes (one head + three workers) and one macOS box:
 Test suite (no network, no firewall changes, temp dirs only):
 
 ```bash
-./tests/run-tests.sh      # 20 checks
+./tests/run-tests.sh      # 28 checks
 ```
 
 ## Where to put the gate
@@ -137,12 +172,41 @@ serves the model. If your agent runs on a laptop, this egress gate does nothing 
 sandbox plus a localhost proxy instead. See [docs/WHERE-TO-LOCK.md](docs/WHERE-TO-LOCK.md) and
 [THREAT-MODEL.md](docs/THREAT-MODEL.md).
 
+## Personal data
+
+The audit record is personal data about you: home paths, project names, sometimes a client's name
+inside a filename. The kit is built accordingly.
+
+- Commands are masked **before** they are written: home → `~`, emails → `[email]`, phone-like
+  numbers → `[num]`, UUIDs and long hex → `[uuid]`/`[hex]`, plus anything in `REDACT_TERMS`.
+- Audit records expire in **90 days** by default (`RETENTION_DAYS`). `--purge` removes everything
+  the tool wrote, in one command.
+- Quarantined files are **never deleted automatically**; `--purge` and `--purge-older N` are
+  explicit, because they may be evidence.
+- Directories are `0700`, files `0600`. No telemetry, no outbound connection except the URL you
+  ask to download.
+
+Full inventory, retention rules and the mapping to APPI / PIPL / PIPA / GDPR:
+[docs/DATA-HANDLING.md](docs/DATA-HANDLING.md) — also in
+[日本語](docs/DATA-HANDLING-ja.md), [中文](docs/DATA-HANDLING-zh.md), [한국어](docs/DATA-HANDLING-ko.md).
+Not legal advice.
+
 ## Prior art
 
-This would be irresponsible without saying who already does each leg better:
+Two piles. The first is what a local-LLM operator can actually borrow; the second is the
+commercial-agent sandbox world, credited because it is where these patterns were worked out — not
+because you need it.
+
+**Transfers to a local stack:** `iron-proxy` (domain allow-listing with secret injection),
+`Tetragon` (kernel-level truth on Linux), `dsh-baseline` (harness-side policy and hash-chained
+decisions), `agent-cordon` and `zeph-sanitizer` (ingest scanning far beyond a file quarantine),
+[awesome-agent-sandboxes](https://github.com/msyvr/awesome-agent-sandboxes) for the index.
+
+**Written for agents you rent, not for your own box:**
 
 - **Anthropic sandbox-runtime (`srt`)** — Seatbelt/Landlock + host proxy with domain allow-lists;
-  the canonical "pin egress to a localhost proxy" pattern.
+  the canonical "pin egress to a localhost proxy" pattern. On a laptop this is what you want
+  instead of our egress gate.
 - **cplt** ([navikt/cplt](https://github.com/navikt/cplt)) — production-shaped agent sandbox; its
   published analysis of the QUIC hole and Landlock residual channels is the best writing on the
   subject.
@@ -154,8 +218,6 @@ This would be irresponsible without saying who already does each leg better:
 - **dsh-baseline** — egress and hash-chained decision audit inside DeepSeek Harness.
 - **agent-cordon**, **zeph-sanitizer** — sanitizing/scanning untrusted ingest, far beyond the
   file-level quarantine here.
-- [awesome-agent-sandboxes](https://github.com/msyvr/awesome-agent-sandboxes) — check here first.
-
 The gap this fills is narrow: three dependency-free scripts, no daemon, no policy language, that a
 person can read in one sitting and run on a box tonight.
 
