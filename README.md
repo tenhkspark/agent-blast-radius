@@ -2,8 +2,12 @@
 
 [English](README.md) | [日本語](README-ja.md) | [简体中文](README-zh.md) | [한국어](README-ko.md)
 
-Three small gates for an agent you cannot fully trust: **lock what it can reach**,
+Security controls for a model stack **you run yourself**: **lock what it can reach**,
 **record what it ran**, **quarantine what you feed it**.
+
+This is not a toolkit for managed agent products. If you rent the model and the vendor runs the
+agent (Claude Code, Cursor, Copilot and the like), that loop is theirs to secure — you are paying
+for it. This repository is about the other case: open weights, your gateway, your knowledge store.
 
 No daemon, no framework, no dependencies beyond `bash`, `python3`, `ufw` and `zstd`.
 
@@ -15,16 +19,20 @@ scripts/ingest-quarantine.sh  outside files land read-only; only text reaches th
 scripts/weights-ledger.sh     pin the checkpoint you serve; exit 1 when it moves
 ```
 
-## Does this apply to you?
+## Scope
 
-- **A Linux box or container runs your agent** — all of it applies. Start with `preflight.sh`.
-- **A macOS laptop with Claude Code, Cursor or a similar agent** — the egress gate does not apply
-  (no `ufw`, and `pf` cannot see processes). Use a sandbox plus a localhost proxy instead
-  (`srt`, `cplt`, `Agent Safehouse`); this kit's ingest gate and audit still work if your harness
-  writes a log.
-- **You want to detect a backdoored model** — nothing here detects anything. Read
-  [docs/SELF-CRITIQUE.md](docs/SELF-CRITIQUE.md) first, then decide whether consequence-level
-  control is what you actually want.
+**In scope:** open weights on your own hardware, a gateway you run (LiteLLM or any
+OpenAI-compatible proxy), a local knowledge store that gets retrieved into the prompt, and harnesses
+you can point at a log.
+
+**Out of scope:** managed agent products. Vulcan/Claude Code/Cursor-style tools rent you both the
+model and the loop; the sandbox, the egress policy and the audit are part of what you pay for. If
+you need that, ask the vendor, or wrap it yourself with `srt`, `cplt` or `Agent Safehouse`. Mixing
+is fine — a vendor search API next to local weights — but this kit covers the local half only, and
+says so everywhere it applies.
+
+**Never in scope:** detection. Nothing here inspects weights or behaviour. Read
+[docs/SELF-CRITIQUE.md](docs/SELF-CRITIQUE.md) before assuming otherwise.
 
 ## What is in here
 

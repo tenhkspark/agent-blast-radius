@@ -31,6 +31,9 @@ agent 写插件。示例见 `configs/litellm-tool-permission.example.yaml`。两
 而不是 block，让 agent 收到消息后继续。它读不出 base64、不覆盖 pass_through_endpoints，也无法
 区分"引用 payload"和"执行 payload"，所以它只是收窄到达出口边界的东西。
 
+**范围**：自托管权重、你自己的网关、被检索进提示的本地知识库、能读到日志的 harness。
+**不在范围**：托管型 agent 产品——那类工具把模型和循环一起租给你，沙箱与审计是价格的一部分。
+
 ## 为什么做这个
 
 2026 年 10 月 27 日的预印本显示：投毒 **0.1%** 的预训练语料，就足以在编码 agent 里植入后门，而且
