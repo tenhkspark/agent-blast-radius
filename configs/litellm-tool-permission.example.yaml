@@ -1,0 +1,47 @@
+# A pre-execution gate at the gateway (LiteLLM example)
+#
+# The paper's section 6.1 points at "classifiers that screen actions before execution". If all
+# your harnesses go through one gateway, that gateway is where the screen belongs: one place,
+# every client, no per-agent integration.
+#
+# This is the cheap version: a regex on the command inside a tool call. Two properties matter.
+#
+# 1. DENY RULE FIRST. A rule fires when its patterns MATCH, and a rule whose pattern does not
+#    match simply falls through to the next one. A single "allow if safe" rule therefore fails
+#    OPEN: the unsafe command fails the pattern, falls through, and hits default_action. Put the
+#    dangerous pattern on a deny rule above the allow rule.
+# 2. REWRITE, NOT BLOCK. Rewriting replaces the tool call with a message, so the agent learns
+#    what happened and can try another way. Blocking fails the whole request.
+#
+# Known limits, stated so nobody trusts it more than it deserves:
+#   - It sees the command string. base64, a here-doc, or a variable that expands to the payload
+#     walks past it.
+#   - It does not apply to pass_through_endpoints (LiteLLM issue #32201). Use normal routes.
+#   - A command that merely *quotes* a suspicious string is denied too. That is a real false
+#     positive: writing a test for this gate can itself be blocked by it.
+#   - It is additive. It does not replace an egress allow-list; it narrows what reaches one.
+
+guardrails:
+  - guardrail_name: "tool-permission"
+    litellm_params:
+      guardrail: tool_permission
+      mode: "post_call"
+      default_on: true
+      rules:
+        - id: "deny_shell_pipe"
+          tool_name: "^(bash|shell|terminal|run_command|exec)$"
+          decision: deny
+          allowed_param_patterns:
+            # matches ONLY when a download is piped into a shell
+            "command": '^(?=[\s\S]*\|\s*(?:sudo\s+)?(?:ba)?sh\b)[\s\S]*$'
+        - id: "deny_decode_pipe"
+          tool_name: "^(bash|shell|terminal|run_command|exec)$"
+          decision: deny
+          allowed_param_patterns:
+            "command": '^(?=[\s\S]*base64\s+-d[\s\S]*\|)[\s\S]*$'
+        - id: "allow_shell"
+          tool_name: "^(bash|shell|terminal|run_command|exec)$"
+          decision: allow
+      default_action: allow
+      on_disallowed_action: rewrite
+      violation_message_template: "blocked by guardrail ({rule_id}): download piped into a shell"

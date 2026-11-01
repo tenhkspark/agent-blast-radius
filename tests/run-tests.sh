@@ -79,6 +79,16 @@ printf 'hello\n' > "$T/doc.txt"
 QUARANTINE_ROOT="$T/quarantine" LIBRARY_TEXT="$T/lib" "$ROOT/scripts/ingest-quarantine.sh" "$T/doc.txt" --id demo --install >/dev/null 2>&1
 check "installs text on --install" 'test -f "$T/lib/demo.md"'
 
+echo "== example configs parse"
+if python3 -c "import yaml" 2>/dev/null; then
+  for f in configs/*.yaml; do
+    python3 -c "import sys,yaml;yaml.safe_load(open(sys.argv[1]));print('ok')" "$f" >/dev/null 2>&1 \
+      && ok "yaml $(basename "$f")" || bad "yaml $(basename "$f")"
+  done
+else
+  echo "  skip (pyyaml absent)"
+fi
+
 echo "== preflight"
 out=$("$ROOT/scripts/preflight.sh" 2>&1)
 check "reports a summary"      'has "$out" "summary"'

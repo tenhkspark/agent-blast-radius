@@ -65,6 +65,25 @@ all. Three consequences, in [docs/LOCAL-STACK.md](docs/LOCAL-STACK.md):
 3. **Your nodes need no internet**, which is a luxury: on them a blunt protocol-agnostic block is
    complete, and costs nothing operationally.
 
+## If every harness shares one gateway
+
+A gateway (LiteLLM, or any OpenAI-compatible proxy) is the cheapest place to put a pre-execution
+screen, because every client passes through it and no agent needs a plugin. The paper's section 6.1
+calls this "classifiers that screen actions before execution"; this is the regex-sized version.
+
+See [configs/litellm-tool-permission.example.yaml](configs/litellm-tool-permission.example.yaml).
+Two details decide whether it works at all:
+
+- **Put the deny rule first.** A rule fires when its pattern *matches*; a rule whose pattern does
+  not match falls through. A lone "allow if safe" rule fails open, which is how the first version
+  of this was written and how it silently did nothing.
+- **Rewrite, not block.** `on_disallowed_action: rewrite` swaps the tool call for a message, so the
+  agent learns what happened and continues. `block` fails the entire request.
+
+What it cannot do: read through base64 or a here-doc, cover `pass_through_endpoints`, or tell a
+command that *quotes* a payload from one that runs it — writing a test for this gate can itself be
+denied by it. It narrows what reaches an egress boundary; it is not the boundary.
+
 ## Supply chain: the part you can check
 
 Three facts about downloaded checkpoints, all verifiable: Hub malware scanning skips files over
