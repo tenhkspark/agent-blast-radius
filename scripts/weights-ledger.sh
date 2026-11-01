@@ -9,12 +9,14 @@
 #   ./weights-ledger.sh --baseline            # write the baseline (first run, or after a planned swap)
 #   ./weights-ledger.sh                       # compare; exit 1 on drift
 #   ./weights-ledger.sh --hosts "node1 node2" --path "~/models"
+#   ./weights-ledger.sh --hash --baseline     # content-hash every shard (hours on 500 GB)
 set -uo pipefail
 
 HOSTS=${HOSTS:-}
 PATH_GLOB=${PATH_GLOB:-"$HOME/.cache/huggingface/hub/models--*/snapshots/*"}
 BASELINE=${BASELINE:-$HOME/.cache/agent-blast-radius/weights-baseline.tsv}
 WRITE=0
+DO_HASH=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -22,6 +24,7 @@ while [ $# -gt 0 ]; do
     --hosts) HOSTS=${2:-}; shift ;;
     --path) PATH_GLOB=${2:-}; shift ;;
     --baseline-file) BASELINE=${2:-}; shift ;;
+    --hash) DO_HASH=1 ;;
     -h|--help) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
@@ -37,7 +40,16 @@ probe() {  # runs on the target: one line per snapshot
     shards=$(find -L "$snap" -maxdepth 1 -type f \( -name '*.safetensors' -o -name '*.bin' -o -name '*.gguf' \) 2>/dev/null | wc -l | tr -d ' ')
     bytes=$(du -skL "$snap" 2>/dev/null | awk '{print $1}')
     sizes=$(find -L "$snap" -maxdepth 1 -type f \( -name "*.safetensors" -o -name "*.bin" -o -name "*.gguf" \) -exec wc -c {} \; 2>/dev/null | awk '{print $1}' | sort | shasum -a 256 | awk '{print $1}')
-    printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$model" "$rev" "${small:-none}" "${shards:-0}" "${bytes:-0}" "${sizes:-none}"
+    if [ "${DO_HASH:-0}" = 1 ]; then
+      # Content hashes. This is the real thing, and it costs what it costs: hashing 500 GB
+      # takes hours on a laptop and a while on a server. Run it when you swap a checkpoint,
+      # not on every check.
+      content=$(find -L "$snap" -maxdepth 1 -type f \( -name "*.safetensors" -o -name "*.bin" -o -name "*.gguf" \) -print0 2>/dev/null \
+        | sort -z | xargs -0 shasum -a 256 2>/dev/null | awk '{print $1}' | shasum -a 256 | awk '{print $1}')
+    else
+      content="not-hashed"
+    fi
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$model" "$rev" "${small:-none}" "${shards:-0}" "${bytes:-0}" "${sizes:-none}" "${content:-not-hashed}"
   done
 }
 
